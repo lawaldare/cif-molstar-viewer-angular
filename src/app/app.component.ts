@@ -8,12 +8,13 @@ import {
 import { CommonModule } from '@angular/common';
 
 @Component({
-    selector: 'app-root',
-    imports: [CommonModule],
-    templateUrl: './app.component.html',
-    styleUrls: ['./app.component.css']
+  selector: 'app-root',
+  imports: [CommonModule],
+  standalone: true,
+  templateUrl: './app.component.html',
+  styleUrls: ['./app.component.css'],
 })
-export class AppComponent {
+export class AppComponent implements AfterViewInit {
   @ViewChild('dropArea') dropArea!: ElementRef<HTMLElement>;
   @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
   @ViewChild('viewer') viewer!: ElementRef<HTMLElement>;
