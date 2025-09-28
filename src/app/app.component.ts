@@ -106,6 +106,17 @@ export class AppComponent implements AfterViewInit {
         }
       );
 
+      // 🔴 Catch Mol* internal errors here
+      this.plugin.plugin.events.log.subscribe((e: any) => {
+        if (e.type === 'error') {
+          this.showError(`Mol* error: ${e.message}`);
+          this.currentFile = null;
+          this.hideLoading();
+        } else {
+          this.showSuccess('Structure loaded successfully');
+        }
+      });
+
       this.hideLoading();
     } catch (error) {
       console.error('Error initializing Molstar:', error);
@@ -124,7 +135,7 @@ export class AppComponent implements AfterViewInit {
       this.showLoading();
       const fileContent = await this.readFileAsText(file);
       await this.plugin.loadStructureFromData(fileContent, 'mmcif');
-      this.showSuccess('Structure loaded successfully');
+
       this.hideLoading();
     } catch (error) {
       console.error('Error loading CIF file:', error);
