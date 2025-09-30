@@ -110,6 +110,7 @@ export class AppComponent implements AfterViewInit {
       this.plugin.plugin.events.log.subscribe((e: any) => {
         if (e.type === 'error') {
           this.showError(`Mol* error: ${e.message}`);
+          this.plugin.plugin.clear();
           this.currentFile = null;
           this.hideLoading();
         } else {
