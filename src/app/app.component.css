@@ -274,3 +274,17 @@
 main {
   padding: 0 20px 40px 20px;
 }
+
+.file-info {
+  p {
+    margin-bottom: 10px;
+
+    &.title {
+      margin-bottom: 0;
+    }
+
+    &.first-info {
+      margin-top: 10px;
+    }
+  }
+}

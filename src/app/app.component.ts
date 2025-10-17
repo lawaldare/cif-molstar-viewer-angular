@@ -4,6 +4,7 @@ import {
   ViewChild,
   AfterViewInit,
   signal,
+  computed,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
@@ -24,6 +25,15 @@ export class AppComponent implements AfterViewInit {
   public isLoading = signal(false);
   public errorMsg = signal('');
   public successMsg = signal('');
+  public modelSym = signal<any>(null);
+  public modelSymParam = computed(() => {
+    const cell = this.modelSym()?.spacegroup?.cell;
+    return cell?.anglesInRadians?.map((r: any) => r * (180 / Math.PI));
+  });
+  public simplifiedSpacegroup = computed(() => {
+    const raw = this.modelSym()?.spacegroup?.name?.trim() ?? '';
+    return raw ? raw.split(/\s+/).slice(0, 2).join(' ') : '—';
+  });
 
   ngAfterViewInit(): void {
     this.initMolstar();
@@ -135,7 +145,39 @@ export class AppComponent implements AfterViewInit {
     try {
       this.showLoading();
       const fileContent = await this.readFileAsText(file);
+
+      this.plugin.plugin.clear();
+
       await this.plugin.loadStructureFromData(fileContent, 'mmcif');
+
+      const data =
+        this.plugin.plugin.managers.structure.hierarchy.current.structures[0];
+      if (!data) return;
+
+      const model = data.cell?.obj?.data.models?.[0] || data.cell?.obj?.data;
+      if (!model) return;
+
+      // Extract cell and symmetry info
+      const modelSym = model._staticPropertyData?.model_symmetry;
+      this.modelSym.set(modelSym);
+      // if (modelSym?.spacegroup?.cell) {
+      //   const cell = modelSym.spacegroup.cell;
+      //   const [a, b, c] = cell.size;
+      //   const [alpha, beta, gamma] = cell.anglesInRadians.map(
+      //     (r: any) => r * (180 / Math.PI)
+      //   );
+      //   const spacegroup = modelSym.spacegroup.name;
+      //   const volume = cell.volume;
+
+      //   console.log('A:', a.toFixed(2));
+      //   console.log('B:', b.toFixed(2));
+      //   console.log('C:', c.toFixed(2));
+      //   console.log('Alpha:', alpha.toFixed(2));
+      //   console.log('Beta:', beta.toFixed(2));
+      //   console.log('Gamma:', gamma.toFixed(2));
+      //   console.log('Space group:', spacegroup);
+      //   console.log('Volume:', volume.toFixed(2));
+      // }
 
       this.hideLoading();
     } catch (error) {

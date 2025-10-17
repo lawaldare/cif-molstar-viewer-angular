@@ -39,6 +39,25 @@
       <div class="file-info">
         <p class="file-name">Selected file: {{ currentFile.name }}</p>
         <p class="file-size">Size: {{ currentFile.size | number }} bytes</p>
+        @if(modelSym()){
+        <p class="title">Cell Parameters:</p>
+        <hr />
+        <p class="file-name first-info">
+          A: {{ modelSym()?.spacegroup?.cell?.size?.[0].toFixed(2) }}
+        </p>
+        <p class="file-name">
+          B: {{ modelSym()?.spacegroup?.cell?.size?.[1].toFixed(2) }}
+        </p>
+        <p class="file-name">
+          C: {{ modelSym()?.spacegroup?.cell?.size?.[2].toFixed(2) }}
+        </p>
+        <p class="file-name">Alpha: {{ modelSymParam()?.[0].toFixed(2) }}</p>
+        <p class="file-name">Beta: {{ modelSymParam()?.[1].toFixed(2) }}</p>
+        <p class="file-name">Gamma: {{ modelSymParam()?.[2].toFixed(2) }}</p>
+        <p class="file-name">
+          Space symmetry group: {{ simplifiedSpacegroup() }}
+        </p>
+        }
       </div>
       }
 
