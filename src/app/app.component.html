@@ -17,7 +17,9 @@
         (drop)="onDrop($event)"
       >
         <div class="upload-icon">📁</div>
-        <p class="upload-text">Drag & drop your .cif file here</p>
+        <p class="upload-text">
+          Drag & drop your .cif, .bcif or .ent file here
+        </p>
         <p>or</p>
 
         <!-- Hidden file input -->
@@ -25,7 +27,7 @@
           #fileInput
           type="file"
           class="file-input"
-          accept=".cif, .ent, .pdb"
+          accept=".cif, .ent, .pdb, .bcif"
           (change)="onFileChange($event)"
           hidden
         />

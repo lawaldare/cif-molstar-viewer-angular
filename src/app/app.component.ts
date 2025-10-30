@@ -3,8 +3,6 @@ import {
   ElementRef,
   ViewChild,
   AfterViewInit,
-  signal,
-  computed,
   inject,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -20,15 +18,12 @@ import { AppFacade } from './app.facade';
 export class AppComponent implements AfterViewInit {
   @ViewChild('dropArea') dropArea!: ElementRef<HTMLElement>;
   @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
-  @ViewChild('viewer') viewer!: ElementRef<HTMLElement>;
+  @ViewChild('viewer') container!: ElementRef<HTMLElement>;
 
   public facade = inject(AppFacade);
 
-  private plugin: any = null;
+  private molstarViewer: any = null;
   public currentFile: File | null = null;
-  // public isLoading = signal(false);
-  // public errorMsg = signal('');
-  // public successMsg = signal('');
 
   public modelSym = this.facade.modelSym;
   public modelSymParam = this.facade.modelSymParam;
@@ -87,8 +82,9 @@ export class AppComponent implements AfterViewInit {
   private processFile(file: File): void {
     const lowerName = file.name.toLowerCase();
     const isCif = lowerName.endsWith('.cif');
+    const isBcif = lowerName.endsWith('.bcif');
     const isEnt = lowerName.endsWith('.ent') || lowerName.endsWith('.pdb');
-    if (!isCif && !isEnt) {
+    if (!isCif && !isEnt && !isBcif) {
       this.facade.showError('Please select a valid .cif or .ent file');
       return;
     }
@@ -105,8 +101,8 @@ export class AppComponent implements AfterViewInit {
       this.facade.showLoading();
 
       // Assumes Molstar is loaded globally
-      this.plugin = await (window as any).molstar.Viewer.create(
-        this.viewer.nativeElement,
+      this.molstarViewer = await (window as any).molstar.Viewer.create(
+        this.container.nativeElement,
         {
           layoutIsExpanded: false,
           layoutShowControls: false,
@@ -122,10 +118,10 @@ export class AppComponent implements AfterViewInit {
       );
 
       // 🔴 Catch Mol* internal errors here
-      this.plugin.plugin.events.log.subscribe((e: any) => {
+      this.molstarViewer.plugin.events.log.subscribe((e: any) => {
         if (e.type === 'error') {
           this.facade.showError(`Mol* error: ${e.message}`);
-          this.plugin.plugin.clear();
+          this.molstarViewer.plugin.clear();
           this.currentFile = null;
           this.facade.hideLoading();
         } else {
@@ -142,23 +138,27 @@ export class AppComponent implements AfterViewInit {
 
   /** Load CIF file to Molstar */
   private async loadFileToViewer(file: File): Promise<void> {
-    if (!this.plugin) {
+    if (!this.molstarViewer) {
       this.facade.showError('Viewer not initialized');
       return;
     }
 
     try {
       this.facade.showLoading();
-      const fileContent = await this.readFileAsText(file);
+      const isBinary = file.name.toLowerCase().endsWith('.bcif');
+      const fileContent = isBinary
+        ? await this.facade.readFileAsBytes(file)
+        : await this.facade.readFileAsText(file);
 
-      this.plugin.plugin.clear();
+      this.molstarViewer.plugin.clear();
 
-      const isCif = file.name.toLowerCase().endsWith('.cif');
-      const format = isCif ? 'mmcif' : 'pdb';
-      await this.plugin.loadStructureFromData(fileContent, format);
+      const isEnt = file.name.toLowerCase().endsWith('.ent');
+      const format = isEnt ? 'pdb' : 'mmcif';
+      await this.molstarViewer.loadStructureFromData(fileContent, format);
 
       const data =
-        this.plugin.plugin.managers.structure.hierarchy.current.structures[0];
+        this.molstarViewer.plugin.managers.structure.hierarchy.current
+          .structures[0];
       if (!data) return;
 
       const model = data.cell?.obj?.data.models?.[0] || data.cell?.obj?.data;
@@ -166,7 +166,8 @@ export class AppComponent implements AfterViewInit {
       if (!model) return;
 
       const structures =
-        this.plugin.plugin.managers.structure.hierarchy.current.structures;
+        this.molstarViewer.plugin.managers.structure.hierarchy.current
+          .structures;
       this.facade.structures.update(() => structures);
 
       this.facade.hideLoading();
@@ -177,14 +178,5 @@ export class AppComponent implements AfterViewInit {
       );
       this.facade.hideLoading();
     }
-  }
-
-  private readFileAsText(file: File): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = (e) => resolve(e.target?.result as string);
-      reader.onerror = (e) => reject(e);
-      reader.readAsText(file);
-    });
   }
 }
